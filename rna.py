@@ -16,19 +16,19 @@ def best_score(seq, pwm):
     for i in range(len(pwm)):
         best_pos *= max(pwm[i].values())
         worst_pos *= min(pwm[i].values())
-
+    print seq[best: best+len(pwm)], (score - worst_pos) / (best_pos - worst_pos)
     return best, (score - worst_pos) / (best_pos - worst_pos)
 
 class RNA:
     def __init__(self, x, y, z,
-                 sequence, persistence, pwm_u1, pwm_u2):
+                 sequence, persistence, u1_pwm, u2_pwm):
         self.x = x
         self.y = y
         self.z = z
         self.sequence = sequence
         self.persistence = persistence
-        self.pwm_u1 = pwm_u1
-        self.pwm_u2 = pwm_u2
+        self.u1_pwm = u1_pwm
+        self.u2_pwm = u2_pwm
 
         self.length = 0
         self.bound_u1 = []
@@ -51,15 +51,15 @@ class RNA:
     def bind_snorna(self, u1, u2):
         for i in range(int(ceil(self.length / float(self.persistence)))):
             block = self.blocks[i]
-            if u1.get_block(*block) and block not in self.bound_u1:
-                seq = self._get_block_seq(i, len(self.pwm_u1))
-                best, score = best_score(seq, self.pwm_u1)
+            if u1.get_block(*block) and i not in self.bound_u1:
+                seq = self._get_block_seq(i, len(self.u1_pwm))
+                best, score = best_score(seq, self.u1_pwm)
                 if score:
                     self.bound_u1 += [i]
                     u1.remove_from_block(*block)
-            if u2.get_block(*block) and block not in self.bound_u2:
-                seq = self._get_block_seq(i, len(self.pwm_u2))
-                best, score = best_score(seq, self.pwm_u2)
+            if u2.get_block(*block) and i not in self.bound_u2:
+                seq = self._get_block_seq(i, len(self.u2_pwm))
+                best, score = best_score(seq, self.u2_pwm)
                 if score:
                     self.bound_u2 += [i]
                     u2.remove_from_block(*block)
@@ -67,19 +67,21 @@ class RNA:
     def release_snorna(self, u1, u2):
         for i in range(int(ceil(self.length / float(self.persistence)))):
             block = self.blocks[i]
-            if block in self.bound_u1:
-                seq = self._get_block_seq(i, len(u1_pwm))
-                best, score = best_score(seq, u1_pwm)
+            if i in self.bound_u1:
+                seq = self._get_block_seq(i, len(self.u1_pwm))
+                best, score = best_score(seq, self.u1_pwm)
                 if random() > score:
                     self.bound_u1.remove(i)
                     u1.add_to_block(*block)
 
-            if block in self.bound_u2:
-                seq = self._get_block_seq(i, len(u2_pwm))
-                best, score = best_score(seq, u2_pwm)
+            if i in self.bound_u2:
+                seq = self._get_block_seq(i, len(self.u2_pwm))
+                best, score = best_score(seq, self.u2_pwm)
+                print 'here', best, score, self.bound_u2
                 if random() > score:
                     self.bound_u2.remove(i)
                     u2.add_to_block(*block)
+                print self.bound_u2
 
     def bind_u3(self, u3):
         for i in range(int(ceil(self.length / float(self.persistence)))):
