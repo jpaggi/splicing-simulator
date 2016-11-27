@@ -72,3 +72,63 @@ def pwms():
     five_pwm = get_pwm(five_seqs)
     three_pwm = get_pwm(three_seqs)
     return five_pwm, three_pwm
+
+def get_introns(gff):
+    gff = open(gff, 'r')
+    line = gff.readline()
+    while line[0] == '#': line = gff.readline()
+    line = line.strip().split()
+    introns = {}
+    while len(line) > 7:
+        chrom, source, feature, start, end, a, strand = line[:7]
+        if feature == 'intron':
+            if chrom not in introns: introns[chrom] = []
+            introns[chrom] += [(start, end, strand, 0, float('inf'))]
+        line = gff.readline().strip().split()
+    gff.close()
+    return introns
+
+def get_flanks(introns, gff):
+    gff = open(gff, 'r')
+    line = gff.readline()
+    while line[0] == '#': line = gff.readline()
+    line = line.strip().split()
+    while len(line) > 7:
+        chrom, source, feature, start, end, a, strand = line[:7]
+        if feature == 'CDS':
+            for i, intron in enumerate(introns[chrom]):
+                if strand == intron[2]:
+                    if int(start) == int(intron[1])+1:
+                        introns[chrom][i] = (intron[0], intron[1], intron[2], intron[3], min(intron[4], int(end)))
+                    elif int(end) == int(intron[0])-1:
+                        introns[chrom][i] = (intron[0], intron[1], intron[2], max(intron[3], int(start)), intron[4])
+        line = gff.readline().strip().split()
+    gff.close()
+    return introns
+
+def intron_seqs(introns, seqs):
+    out = []
+    for chrom in introns:
+        for intron in introns[chrom]:
+            if intron[3] == 0 or intron[4] == float('inf'): continue
+            start, end, strand, begin, stop = intron
+            start, end, begin, stop = int(start), int(end), int(begin), int(stop)
+            if strand == '+':
+                seq = seqs[chrom][begin:stop]
+                five = start - begin - 1
+                three = end - begin
+            else:
+                seq = revcomp(seqs[chrom][begin: stop])
+                five = stop - end 
+                three = stop - start + 1
+
+            if seq[five: five+2] != 'GT' or seq[three-2: three] != 'AG': continue
+            out += [(seq, five, three)]
+    return out            
+
+def get_genes():
+    gff = 'saccharomyces_cerevisiae.gff'
+    seq = get_seq(gff)
+    introns = get_introns(gff)
+    introns =  get_flanks(introns, gff)
+    return intron_seqs(introns, seq)
