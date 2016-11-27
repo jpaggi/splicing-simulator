@@ -31,7 +31,7 @@ class Grid:
         self.blocks[(x, y, z)] += num
 
     def remove_from_block(self, x, y, z, num = 1):
-        self.blocks[(x, y, z)] += -1
+        self.blocks[(x, y, z)] += -num
 
     def neighbors(self, x, y, z, dist):
         return [self.blocks[(self.nextX(x, i), self.nextY(y, j), self.nextZ(z, k))]

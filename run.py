@@ -1,43 +1,40 @@
 from diffuser import Diffuser
 from rna import RNA
+from process_seq import pwms
 
 def main(x, y, z, num_steps,
          n_u1, n_u2, n_u3,
          d_u1, d_u2, d_u3,
          pwm_u1, pwm_u2,
+         u1_t, u2_t,
          persistence, sequence):
     # Create snoRNAs and diffuse to steady state
     u1 = Diffuser(x, y, z, d_u1, n_u1)
     u2 = Diffuser(x, y, z, d_u2, n_u2)
     u3 = Diffuser(x, y, z, d_u3, n_u3)
-
     for _ in range(300):
         u1.update()
         u2.update()
         u3.update()
     
-    rna = RNA(x, y, z, sequence, persistence, pwm_u1, pwm_u2)
-    for i in range(num_steps):
-        if i < len(sequence): rna.extend()
+    rna = RNA(x, y, z, sequence, persistence, pwm_u1, pwm_u2, u1_t, u2_t)
+#    for i in range(num_steps):
+    i = 0
+    while True:
+        i += 1
+        rna.extend()
         rna.random_flight()
         u1.update()
         u2.update()
         u3.update()
-        
         rna.bind_snorna(u1, u2)
         rna.release_snorna(u1, u2)
         splice = rna.bind_u3(u3)
-        print 'u1', rna.bound_u1
-        print 'u2', rna.bound_u2
+        if splice == (5, 29): return  i, splice
+    return i, False
 
-        if splice:
-            return  i, splice
-    return False
-
-u1_pwm = [{"A":0,"T":0,"C":0,"G":1},{"A":0,"T":1,"C":0,"G":0},{"A":1,"T":0,"C":0,"G":0},{"A":.02,"T":.8,"C":.18,"G":0},{"A":0,"T":0,"C":0,"G":1}]
-u2_pwm = [{"A":.2,"T":.4,"C":.2,"G":.2}]*10+[{"A":1,"T":0,"C":0,"G":0},{"A":0,"T":0,"C":0,"G":1}]    
+u1_pwm, u2_pwm = pwms()
 seq = 'ATGGCATCCACCGATTTCTCCAAGATTGAAACTTTGAAACAATTAAACGCTTCTTTGGCTGACAAGTCATACATTGAAGGGTATGTTCCGATTTAGTTTACTTTATAGATCGTTGTTTTTCTTTCTTTTTTTTTTTTCCTATGGTTACATGTAAAGGGAAGTTAACTAATAATGATTACTTTTTTTCGCTTATGTGAATGATGAATTTAATTCTTTGGTCCGTGTTTATGATGGGAAGTAAGACCCCCGATATGAGTGACAAAAGAGATGTGGTTGACTATCACAGTATCTGACGATAGCACAGAGCAGAGTATCATTATTAGTTATCTGTTATTTTTTTTTCCTTTTTTGTTCAAAAAAAGAAAGACAGAGTCTAAAGATTGCATTACAAGAAAAAAGTTCTCATTACTAACAAGCAAAATGTTTTGTTTCTCCTTTTAAAATAGTACTGCTGTTTCTCAAGCTGACGTCACTGTCTTCAAGGCTTTCCAATCTGCTTACCCAGAATTCTCCAGATGGTTCAACCACATCGCTTCCAAGGCCGATGAATTCGACTCTTTCCCAGCTGCCTCTGCTGCCGCTGCCGAAGAAGAAGAAGATGACGATGTCGATTTATTCGGTTCCGACGATGAAGAAGCTGACGCTGAAGCTGAAAAGTTGAAGGCTGAAAGAATTGCCGCATACAACGCTAAGAAGGCTGCTAAGCCAGCTAAGCCAGCTGCTAAGTCCATTGTCACTCTAGATGTCAAGCCATGGGATGATGAAACCAATTTGGAAGAAATGGTTGCTAACGTCAAGGCCATCGAAATGGAAGGTTTGACCTGGGGTGCTCACCAATTTATCCCAATTGGTTTCGGTATCAAGAAGTTGCAAATTAACTGTGTTGTCGAAGATGACAAGGTTTCCTTGGATGACTTGCAACAAAGCATTGAAGAAGACGAAGACCACGTCCAATCTACCGATATTGCTGCTATGCAAAAATTATAA'
 
-for i in range(30):
-    print i
-    print main(100, 100, 100, 2000, 1000, 1000, 1000, 1, 1, 1, u1_pwm, u2_pwm, 15, seq)
+
+print main(100, 100, 100, int(len(seq) * 1.5), 1000, 1000, 1000, 1, 1, 1, u1_pwm, u2_pwm, 1.0, 2.0, 15, seq)
