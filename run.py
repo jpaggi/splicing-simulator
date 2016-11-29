@@ -34,7 +34,7 @@ def main(x, y, z, num_steps, u1, u2, u3,
     return i, False
 f_up, f_down = 3, 7
 t_up, t_down = 15, 3
-u1_pwm, u2_pwm = pwms()
+u1_pwm, u2_pwm = pwms(f_up, f_down, t_up, t_down)
 persistence = 15
 i = 0
 for seq, five, three in get_genes():
