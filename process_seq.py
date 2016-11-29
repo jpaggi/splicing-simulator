@@ -61,12 +61,12 @@ def get_pwm(seqs):
             counts[d][key] = val / total
     return counts
 
-def pwms():
+def pwms(f_up, f_down, t_up, t_down):
     gff = 'saccharomyces_cerevisiae.gff'
     seq = get_seq(gff)
     fives, threes = get_splice_sites(gff)
-    five_seqs = get_splice_site_seqs(fives, 3, 7, seq)
-    three_seqs = get_splice_site_seqs(threes, 15, 3, seq)
+    five_seqs = get_splice_site_seqs(fives, f_up, f_down, seq)
+    three_seqs = get_splice_site_seqs(threes, t_up, t_down, seq)
     five_seqs = filter(lambda x: x[3:5] == 'GT', five_seqs)
     three_seqs = filter(lambda x: x[13:15] == 'AG', three_seqs)
     five_pwm = get_pwm(five_seqs)

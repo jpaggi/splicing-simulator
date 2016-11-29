@@ -32,16 +32,17 @@ def main(x, y, z, num_steps, u1, u2, u3,
         splice = rna.bind_u3(u3)
         if splice: return  i, splice
     return i, False
-
+f_up, f_down = 3, 7
+t_up, t_down = 15, 3
 u1_pwm, u2_pwm = pwms()
 persistence = 15
-u1, u2, u3 = init_diffusers(50, 50, 50, 1000, 1000, 5000, 1, 1, 1, 500)
 i = 0
-for seq, five, three in get_genes()[104:]:
+for seq, five, three in get_genes():
     i += 1
-    f_block, t_block = (five+len(u1_pwm)-1) / persistence, (three+len(u2_pwm)-1) / persistence
+    f_block, t_block = (five-f_up+len(u1_pwm)-1) / persistence, (three-t_up+len(u2_pwm)-1) / persistence # tends to be one too low?
     for j in range(5):
-        iterations, splice = main(50, 50, 50, int(len(seq) * 1.75), u1, u2, u3, u1_pwm, u2_pwm, 1.0, 1.0, persistence, seq)
+        u1, u2, u3 = init_diffusers(50, 50, 50, 1000, 1000, 5000, 1, 1, 1, 400)
+        iterations, splice = main(50, 50, 50, int(len(seq) * 2), u1, u2, u3, u1_pwm, u2_pwm, 1.0, 1.0, persistence, seq)
         if not splice:
             print '\t'.join(map(str, [i, f_block, t_block, -1, -1]))
         else:
